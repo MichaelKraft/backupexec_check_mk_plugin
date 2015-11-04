@@ -67,7 +67,10 @@ foreach ($job in $Jobs) {
   If ( $jobHistory.Rows.Count -eq 0 ) { continue }
   # Just enumerate jobHistory single row
 	foreach ( $jobHistoryResult in $jobHistory) { }
- if($jobHistoryResult.FinalJobStatus -eq 19)
+ 
+#checks if job code is success, if not searches active alert table
+
+if($jobHistoryResult.FinalJobStatus -eq 19)
  {
     write-host job $jobname $jobHistoryResult.FinalJobStatus $jobHistoryResult.Endtime $jobHistoryResult.ElapsedTimeSeconds $jobHistoryResult.TotalDataSizeBytes $jobHistoryResult.TotalRateMbMin $jobHistoryResult.DDupRatio
  }
