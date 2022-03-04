@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # Backup Exec check script for check_mk
 # Tested with Backup Exec 2010 and 2012
-# Retrieves job status from backup exec database 
+# Retrieves job status from backup exec database
 # Cyril Pawelko <cyril@pawelko.net> http://www.pawelko.net
 #
 # This is free software;  you can redistribute it and/or modify it
@@ -44,47 +44,46 @@
 # Format Outil:
 #job jobname FinalJobStatus Enddate Endtime ElapsedTimeSeconds TotalDataSizeBytes TotalRateMbMin DDupRatio
 
-factory_settings["backupexec_job_defaults"] = {
-    "exceptions_are_ok"         : (False,)
-}
-
 def inventory_backupexec_job(info):
     inventory = []
-    for line in info:
-        if line[0] == "error": inventory.append( (" ".join(line), None) ) 
+    for line in info :
         if line[0] == "job": inventory.append( (line[1], None) )
-    return inventory # return empty list: nothing found
+    return inventory
 
 def check_backupexec_job(item, params, info):
     exceptions_are_ok = params.get("exceptions_are_ok")[0]
-    for line in info:
-        if line[1] == item:
-            comment = "(end %s %s UTC, duration %s, size %s, rate %s Mb/min, dedup ratio %s)" %(line[3],line[4],get_age_human_readable(saveint(line[5])),get_bytes_human_readable(saveint(line[6])),line[7],line[8])
-            perfdata = [ 
-                ( "Elapsed Time", saveint(line[5]) ),
-                ( "Backup Size",  saveint(line[6]) ),
-                ( "Rate Mb/Min",  savefloat(line[7].replace(",",".")) ),
-                ( "DDupRatio",    saveint(line[8]) )] 
+    for line in info :
+        if line[1] == item :
+            comment = "(end %s %s UTC, duration %s, size %s, rate %s Mb/min, dedup ratio %s)" %(line[3],line[4],line[5],line[6],line[7],line[8])
+            perfdata = [
+                ( "elapsed_time", int(line[5]) ),
+                ( "backup_size",  int(line[6]) ),
+                ( "rate_MBperMin",  float(line[7].replace(",",".")) ),
+                ( "ddupratio",    float(line[8].replace(",",".")) )]
             FinalJobStatus = int(line[2])
             if   FinalJobStatus ==  1 : status = 2; message="canceled(!!)"
             elif FinalJobStatus ==  2 : status = 0; message="completed"
-            elif FinalJobStatus ==  3 : 
-		if exceptions_are_ok == True : status = 0; message="completed with exceptions"
-		else : status = 1; message="completed with exceptions(!)" 
+            elif FinalJobStatus ==  3 :
+                if exceptions_are_ok == True : status = 0; message="completed with exceptions"
+                else : status = 1; message="completed with exceptions(!!)"
             elif FinalJobStatus ==  6 : status = 2; message="completed with errors(!!)"
             elif FinalJobStatus ==  9 : status = 2; message="missed(!!)"
-            elif FinalJobStatus == 11 : status = 1; message="paused(!)"
+            elif FinalJobStatus == 11 : status = 1; message="paused(!!)"
             elif FinalJobStatus == 19 : status = 0; message="successful"
             elif FinalJobStatus == 21 : status = 2; message="canceled, timed out(!!)"
-            else : status = 3; message="Unknown (Jobstatus=%s)"%line[2]
-            return (status, "Job \"%s\" %s %s" % (line[1],message,comment), perfdata )
-    return (3, "Job not found")
+            else : status = 3; message="Unknown (Jobstatus=%s)" %line[2]
+            return (status, "job \"%s\" %s %s" %(line[1],message,comment), perfdata )
+    return (3, "job \"%s\" not found out of \"%s\" jobs" %(item,len(info)) )
+
+factory_settings["backupexec_job_defaults"] = {
+    "exceptions_are_ok"         : (False,)
+}
 
 check_info["backupexec_job"] = {
     "inventory_function"  : inventory_backupexec_job,
     "check_function"      : check_backupexec_job,
     "has_perfdata"        : True,
-    "service_description" : "Backup Exec Job",
-    "group"     	  : "backupexec_job",
+    "service_description" : "Backup Exec Job - %s",
+    "group"               : "backupexec_job",
     "default_levels_variable" : "backupexec_job_defaults",
 }
