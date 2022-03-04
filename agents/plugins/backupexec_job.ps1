@@ -7,7 +7,7 @@ function Invoke-SQL {
         [string] $sqlCommand = ""
       )
 # BE Database should be on localhost
-    $dataSource = ".\BKUPEXEC"
+    $dataSource = "localhost"
     $database = "BEDB"
     $connectionString = "Data Source=$dataSource; " +
             "Integrated Security=SSPI; " +
